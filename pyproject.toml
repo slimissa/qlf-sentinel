@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qlf-sentinel"
 version = "0.0.1"
-description = "QLF Sentinel: The AI Watchtower"
+description = "QLF Sentinel"
 requires-python = ">=3.10"
 dependencies = []
 
