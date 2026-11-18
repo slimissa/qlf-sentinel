@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qlf-sentinel"
+version = "0.0.1"
+description = "QLF Sentinel: The AI Watchtower"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+qlf-sentinel = "sentinel.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

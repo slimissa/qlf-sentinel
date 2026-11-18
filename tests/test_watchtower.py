@@ -1,8 +1,8 @@
 import os
 import json
 import pytest
-from src.sentinel.core.llm import generate
-from src.sentinel.core.validation import (
+from sentinel.core.llm import generate
+from sentinel.core.validation import (
     validate_llm_output, MICValidationError, DateValidationError,
     CoverageValidationError, PromptInjectionError
 )
