@@ -3,15 +3,27 @@ set -euo pipefail
 
 # tools/check_fresh_clone.sh
 # The gate: a fresh clone must reproduce the Day 1 state exactly.
+# In CI: clones the PR head branch ($GITHUB_HEAD_REF).
+# Locally: clones the current branch (git rev-parse --abbrev-ref HEAD).
 # Exits 0 if the expected state is reproduced, 1 otherwise.
 
-REPO_URL="${REPO_URL:-https://github.com/slimissa/qlf-sentinel.git}"
+DEFAULT_REPO_URL=$(git remote get-url origin 2>/dev/null || echo "https://github.com/slimissa/qlf-sentinel.git")
+REPO_URL="${REPO_URL:-$DEFAULT_REPO_URL}"
+
+# In CI: GITHUB_HEAD_REF is the PR source branch. Locally: current branch.
+if [ -n "${GITHUB_HEAD_REF:-}" ]; then
+  BRANCH="$GITHUB_HEAD_REF"
+else
+  BRANCH=$(git rev-parse --abbrev-ref HEAD)
+fi
+
 TIMESTAMP=$(date +%s)
 WORKDIR="/tmp/check-${TIMESTAMP}"
 
+echo "==> Gate branch: ${BRANCH}"
 echo "==> Cloning into ${WORKDIR}"
-git clone --quiet "${REPO_URL}" "${WORKDIR}"
-cd "${WORKDIR}"
+git clone --quiet --branch "$BRANCH" "$REPO_URL" "$WORKDIR"
+cd "$WORKDIR"
 
 echo "==> Creating fresh venv"
 python3 -m venv .venv
@@ -30,20 +42,20 @@ fi
 
 echo "==> Running pytest"
 PYTEST_OUTPUT=$(pytest tests/ -v 2>&1 || true)
-echo "${PYTEST_OUTPUT}"
+echo "$PYTEST_OUTPUT"
 
 echo "==> Asserting the Day 1 state"
-if ! echo "${PYTEST_OUTPUT}" | grep -q "1 failed, 6 passed"; then
+if ! echo "$PYTEST_OUTPUT" | grep -q "1 failed, 6 passed"; then
   echo "FAIL: expected 1 failed, 6 passed"
   exit 1
 fi
 
-if ! echo "${PYTEST_OUTPUT}" | grep -q "test_hallucination_mode_returns_wrong_mic"; then
+if ! echo "$PYTEST_OUTPUT" | grep -q "test_hallucination_mode_returns_wrong_mic"; then
   echo "FAIL: expected the red line to be test_hallucination_mode_returns_wrong_mic"
   exit 1
 fi
 
-if ! echo "${PYTEST_OUTPUT}" | grep -q "NotImplementedError: Implement the hallucination mock"; then
+if ! echo "$PYTEST_OUTPUT" | grep -q "NotImplementedError: Implement the hallucination mock"; then
   echo "FAIL: expected NotImplementedError on the hallucination mock"
   exit 1
 fi
@@ -63,6 +75,7 @@ fi
 echo ""
 echo "=================================================="
 echo "PASS: Fresh clone reproduces the Day 1 state."
+echo "  - Branch: $BRANCH"
 echo "  - 1 failed, 6 passed"
 echo "  - Red line: test_hallucination_mode_returns_wrong_mic"
 echo "  - Failure: NotImplementedError (the assignment)"
